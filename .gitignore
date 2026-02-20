@@ -1,0 +1,8 @@
+node_modules
+.vscode
+README.md
+docs
+.env
+keys.js
+.instalar
+auth_tokens

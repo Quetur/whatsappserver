@@ -1,0 +1,1 @@
+curl.exe -k -X POST http://localhost:3006/enviar-pedido -H "Content-Type: application/json" -H "Authorization: Bearer mi_token_secreto_123" -d "{\"telefono\": \"5491173681179\", \"mensaje\": \"Prueba final desde Windows\"}"

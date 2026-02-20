@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Panel Admin</title>
+    <style>
+        :root {
+            --whatsapp-green: #25d366;
+            --whatsapp-dark: #075e54;
+            --bg-gray: #f0f2f5;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-gray); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        /* Header */
+        header { width: 100%; background: var(--whatsapp-dark); color: white; padding: 15px 0; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; }
+        .logout-btn { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: white; text-decoration: none; font-size: 14px; border: 1px solid white; padding: 5px 10px; border-radius: 5px; }
+
+        .container { width: 90%; max-width: 500px; margin-top: 30px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; }
+
+        /* Estado de Conexión */
+        .status-badge { display: inline-block; padding: 8px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 20px; font-size: 14px; }
+        .online { background: #e7f9ed; color: #1ebea5; }
+        .offline { background: #fff1f0; color: #f44336; }
+
+        /* QR Code */
+        #qr-container { margin: 20px 0; padding: 15px; border: 1px dashed #ccc; display: none; }
+        #qr-image { width: 250px; height: 250px; }
+        
+        /* Info de cuenta */
+        #account-info { margin-top: 15px; font-size: 16px; color: #333; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--whatsapp-green); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; display: inline-block; margin-top: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        h2 { margin: 0 0 10px 0; color: #444; }
+        p { color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <strong>WhatsApp Panel Manager</strong>
+        <a href="/logout" class="logout-btn">Cerrar Sesión</a>
+    </header>
+
+    <div class="container">
+        <h2>Estado del Servidor</h2>
+        <div id="status-tag" class="status-badge offline">Verificando...</div>
+        
+        <div id="loading-area">
+            <div class="loader"></div>
+            <p>Sincronizando con WhatsApp...</p>
+        </div>
+
+        <div id="qr-container">
+            <p><strong>Escanea el código para conectar:</strong></p>
+            <img id="qr-image" src="" alt="Código QR">
+            <p style="margin-top:10px; font-size: 12px; color: #888;">Asegúrate de estar en una conexión estable.</p>
+        </div>
+
+        <div id="account-info" style="display: none;">
+            <p>Conectado como:</p>
+            <h3 id="phone-number" style="color: var(--whatsapp-dark);"></h3>
+            <p>✅ El servidor está listo para enviar mensajes vía API.</p>
+        </div>
+    </div>
+
+    <script>
+        const statusTag = document.getElementById('status-tag');
+        const qrContainer = document.getElementById('qr-container');
+        const qrImage = document.getElementById('qr-image');
+        const accountInfo = document.getElementById('account-info');
+        const phoneNumberText = document.getElementById('phone-number');
+        const loadingArea = document.getElementById('loading-area');
+
+        async function checkStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+
+                if (data.isConnected) {
+                    // Estado Conectado
+                    statusTag.textContent = '● CONECTADO';
+                    statusTag.className = 'status-badge online';
+                    qrContainer.style.display = 'none';
+                    accountInfo.style.display = 'block';
+                    loadingArea.style.display = 'none';
+                    phoneNumberText.textContent = '+' + data.number;
+                } else if (data.qr) {
+                    // Mostrando QR
+                    statusTag.textContent = '● ESPERANDO QR';
+                    statusTag.className = 'status-badge offline';
+                    qrImage.src = data.qr;
+                    qrContainer.style.display = 'block';
+                    accountInfo.style.display = 'none';
+                    loadingArea.style.display = 'none';
+                } else {
+                    // Cargando/Desconectado
+                    statusTag.textContent = '● CONECTANDO...';
+                    statusTag.className = 'status-badge offline';
+                    qrContainer.style.display = 'none';
+                    accountInfo.style.display = 'none';
+                    loadingArea.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Error al obtener estado:', err);
+                statusTag.textContent = '● ERROR DE RED';
+            }
+        }
+
+        // Consultar cada 5 segundos para actualizar el QR o el estado automáticamente
+        setInterval(checkStatus, 5000);
+        checkStatus();
+    </script>
+</body>
+</html>
