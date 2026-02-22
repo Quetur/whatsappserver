@@ -9,6 +9,7 @@
             --whatsapp-green: #25d366;
             --whatsapp-dark: #075e54;
             --bg-gray: #f0f2f5;
+            --danger: #f44336;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-gray); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         
@@ -16,7 +17,7 @@
         header { width: 100%; background: var(--whatsapp-dark); color: white; padding: 15px 0; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; }
         .logout-btn { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: white; text-decoration: none; font-size: 14px; border: 1px solid white; padding: 5px 10px; border-radius: 5px; }
 
-        .container { width: 90%; max-width: 500px; margin-top: 30px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; }
+        .container { width: 90%; max-width: 500px; margin-top: 30px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; margin-bottom: 40px; }
 
         /* Estado de Conexión */
         .status-badge { display: inline-block; padding: 8px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 20px; font-size: 14px; }
@@ -25,10 +26,22 @@
 
         /* QR Code */
         #qr-container { margin: 20px 0; padding: 15px; border: 1px dashed #ccc; display: none; }
-        #qr-image { width: 250px; height: 250px; }
+        #qr-image { width: 250px; height: 250px; border-radius: 8px; }
         
-        /* Info de cuenta */
-        #account-info { margin-top: 15px; font-size: 16px; color: #333; }
+        /* Pairing Code Section */
+        #pairing-container { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; display: none; }
+        .pairing-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; text-align: center; font-size: 16px; }
+        .btn-pairing { background: var(--whatsapp-green); color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-pairing:hover { background: var(--whatsapp-dark); }
+        .btn-pairing:disabled { background: #ccc; cursor: not-allowed; }
+        
+        #pairing-code-display { font-size: 32px; font-weight: 900; color: var(--whatsapp-dark); letter-spacing: 6px; margin: 20px 0; padding: 15px; background: #f9f9f9; border: 2px dashed var(--whatsapp-green); border-radius: 10px; display: none; }
+
+        /* Info de cuenta / Logout WhatsApp */
+        #account-info { margin-top: 15px; font-size: 16px; color: #333; display: none; }
+        .btn-logout-wa { background: #fff; color: var(--danger); border: 1px solid var(--danger); padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 25px; transition: 0.2s; }
+        .btn-logout-wa:hover { background: #fff1f0; }
+
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--whatsapp-green); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; display: inline-block; margin-top: 10px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
@@ -52,16 +65,30 @@
             <p>Sincronizando con WhatsApp...</p>
         </div>
 
+        <!-- Opción 1: Código QR -->
         <div id="qr-container">
-            <p><strong>Escanea el código para conectar:</strong></p>
+            <p><strong>1. Escanea el código QR:</strong></p>
             <img id="qr-image" src="" alt="Código QR">
-            <p style="margin-top:10px; font-size: 12px; color: #888;">Asegúrate de estar en una conexión estable.</p>
         </div>
 
-        <div id="account-info" style="display: none;">
+        <!-- Opción 2: Pairing Code -->
+        <div id="pairing-container">
+            <p><strong>O vincula con código de teléfono:</strong></p>
+            <input type="text" id="phone-input" class="pairing-input" placeholder="Ej: 5491122334455">
+            <button id="btn-pairing" class="btn-pairing" onclick="generatePairingCode()">Obtener Código de 8 Dígitos</button>
+            <div id="pairing-code-display"></div>
+            <p style="margin-top:10px; font-size: 12px; color: #888;">Ingresa este código en tu celular tras elegir "Vincular con número de teléfono".</p>
+        </div>
+
+        <!-- Estado Conectado -->
+        <div id="account-info">
             <p>Conectado como:</p>
             <h3 id="phone-number" style="color: var(--whatsapp-dark);"></h3>
             <p>✅ El servidor está listo para enviar mensajes vía API.</p>
+            
+            <button class="btn-logout-wa" onclick="logoutWhatsApp()">
+                Desvincular este número
+            </button>
         </div>
     </div>
 
@@ -69,9 +96,11 @@
         const statusTag = document.getElementById('status-tag');
         const qrContainer = document.getElementById('qr-container');
         const qrImage = document.getElementById('qr-image');
+        const pairingContainer = document.getElementById('pairing-container');
         const accountInfo = document.getElementById('account-info');
         const phoneNumberText = document.getElementById('phone-number');
         const loadingArea = document.getElementById('loading-area');
+        const pairingCodeDisplay = document.getElementById('pairing-code-display');
 
         async function checkStatus() {
             try {
@@ -79,26 +108,26 @@
                 const data = await response.json();
 
                 if (data.isConnected) {
-                    // Estado Conectado
                     statusTag.textContent = '● CONECTADO';
                     statusTag.className = 'status-badge online';
                     qrContainer.style.display = 'none';
+                    pairingContainer.style.display = 'none';
                     accountInfo.style.display = 'block';
                     loadingArea.style.display = 'none';
                     phoneNumberText.textContent = '+' + data.number;
                 } else if (data.qr) {
-                    // Mostrando QR
-                    statusTag.textContent = '● ESPERANDO QR';
+                    statusTag.textContent = '● ESPERANDO VINCULACIÓN';
                     statusTag.className = 'status-badge offline';
                     qrImage.src = data.qr;
                     qrContainer.style.display = 'block';
+                    pairingContainer.style.display = 'block';
                     accountInfo.style.display = 'none';
                     loadingArea.style.display = 'none';
                 } else {
-                    // Cargando/Desconectado
                     statusTag.textContent = '● CONECTANDO...';
                     statusTag.className = 'status-badge offline';
                     qrContainer.style.display = 'none';
+                    pairingContainer.style.display = 'none';
                     accountInfo.style.display = 'none';
                     loadingArea.style.display = 'block';
                 }
@@ -108,7 +137,54 @@
             }
         }
 
-        // Consultar cada 5 segundos para actualizar el QR o el estado automáticamente
+        async function generatePairingCode() {
+            const phoneInput = document.getElementById('phone-input');
+            const btn = document.getElementById('btn-pairing');
+            const phone = phoneInput.value.replace(/\D/g, ''); // Limpiar el número
+
+            if (!phone || phone.length < 10) return alert("Ingresa un número válido con código de país");
+
+            btn.disabled = true;
+            btn.textContent = "Generando...";
+
+            try {
+                const response = await fetch('/api/get-pairing-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: phone })
+                });
+                const data = await response.json();
+
+                if (data.code) {
+                    pairingCodeDisplay.textContent = data.code;
+                    pairingCodeDisplay.style.display = 'block';
+                    btn.textContent = "Código Generado";
+                } else {
+                    alert("Error: " + (data.error || "No se pudo generar"));
+                    btn.disabled = false;
+                    btn.textContent = "Obtener Código de 8 Dígitos";
+                }
+            } catch (err) {
+                alert("Error al conectar con el servidor");
+                btn.disabled = false;
+            }
+        }
+
+        async function logoutWhatsApp() {
+            if (!confirm("¿Cerrar sesión de WhatsApp? Deberás escanear el QR o pedir código de nuevo para reconectar.")) return;
+            
+            try {
+                const res = await fetch('/api/logout-whatsapp', { method: 'POST' });
+                if (res.ok) {
+                    location.reload();
+                } else {
+                    alert("No se pudo cerrar la sesión");
+                }
+            } catch (err) {
+                alert("Error de conexión");
+            }
+        }
+
         setInterval(checkStatus, 5000);
         checkStatus();
     </script>
