@@ -48,34 +48,10 @@ const checkAuth = (req, res, next) => {
 
 // Ruta de Login (Formulario)
 app.get('/login', (req, res) => {
-    const errorMsg = req.query.error ? '<p style="color:red; margin-bottom:10px;">Credenciales incorrectas</p>' : '';
-    res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Login - WhatsApp Panel</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-                body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #f0f2f5; margin: 0; }
-                form { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; text-align: center; }
-                input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-                button { width: 100%; padding: 12px; background: #25d366; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; }
-                button:hover { background: #128c7e; }
-                h2 { color: #075e54; margin-bottom: 20px; }
-            </style>
-        </head>
-        <body>
-            <form action="/login" method="POST">
-                <h2>WhatsApp Panel</h2>
-                ${errorMsg}
-                <input type="text" name="user" placeholder="Usuario" required>
-                <input type="password" name="pass" placeholder="Contraseña" required>
-                <button type="submit">Ingresar</button>
-            </form>
-        </body>
-        </html>
-    `);
+    // path.join une la ruta de tu proyecto con la carpeta views y el archivo
+    res.sendFile(path.join(__dirname, 'views', 'login.html'));
 });
+
 
 app.post('/login', (req, res) => {
     const { user, pass } = req.body;

@@ -17,6 +17,8 @@ git branch -M main
 git remote add origin https://github.com/Quetur/whatsappserver.git
 git push -u origin main
 
-git remote add origin https://github.com/Quetur/whatsappserver.git
+git add .
+git status
+git commit -m "boton cerrar sesion y borro todo lo relacionado a la sesion"
 git branch -M main
 git push -u origin main

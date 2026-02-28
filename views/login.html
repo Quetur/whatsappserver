@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - WhatsApp Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #f0f2f5; margin: 0; }
+        form { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #25d366; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        button:hover { background: #128c7e; }
+        h2 { color: #075e54; margin-bottom: 20px; }
+        .error { color: red; margin-bottom: 10px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <form action="/login" method="POST">
+        <h2>WhatsApp Panel</h2>
+        <!-- Contenedor dinámico para el error -->
+        <div id="error-msg"></div>
+        
+        <input type="text" name="user" placeholder="Usuario" required>
+        <input type="password" name="pass" placeholder="Contraseña" required>
+        <button type="submit">Ingresar</button>
+    </form>
+
+    <script>
+        // Detecta si hay error en la URL y lo muestra
+        if (window.location.search.includes('error')) {
+            document.getElementById('error-msg').innerHTML = '<p class="error">Credenciales incorrectas</p>';
+        }
+    </script>
+</body>
+</html>
